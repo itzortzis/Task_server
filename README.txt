@@ -6,32 +6,32 @@
 Description:
 -------------
 
-This repository was created for the project task_server, which implements a
+This repository was created for the project task_server that contains a
 multi-threading server program in C programming language. This server entrusts
-heavy tasks to workers (threads). The server has a dynamic funcionality, so it 
-can create or kill threads if it is needed. Every worker has a queue that 
-contains the tasks that it has to complete. The server is watching all the 
-queues of the workers and adjusts the load or create/kill a thread and so on.
+heavy tasks to workers-processes(threads). The server has a dynamic funcionality, so it 
+can create or kill threads if it is needed. Every worker has a queue, in which all the 
+related tasks are stored. The server is watching all the queues and adjusts the load or 
+create/kill threads.
 
 
 Files:
 -------
 
-queue.c, queue.h : library that implements a queue and its basic functions.
+queue.c, queue.h : the queue - array based implementation
 task_server.c    : the server program
 task_server.h    : auxiliary library for the server program
-workers.c        : contains the functions for two types of tasks
+workers.c        : worker tasks functions
 workers.h        : auxiliary library for workers.c 
 
 
 Settings:
 ----------
 
-The following macros are in task_server.h file and they are too important for
-the excecution of the program.
+The following macros are located in task_server.h file and they are crucial for
+the results of the program execution.
 
-1. MEAN_TAIL_THRESHOLD : if the size of a worker's queue is bigger than this 
-   threshold then the server creates a new thread.
+1. MEAN_TAIL_THRESHOLD : if a worker's queue contains more tasks than this 
+   threshold, then the server creates a new thread.
 
 2. NUM_TASKS : number of tasks to be generated.
 
