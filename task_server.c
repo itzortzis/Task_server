@@ -7,6 +7,7 @@
 #include <time.h>
 #include <signal.h>
 #include <math.h>
+#include <unistd.h>
 
 
 int type = TYPE_1;        // type of the tas
@@ -20,7 +21,7 @@ int task_count = 0;
 
 pthread_mutex_t worker_mutex;       // mutex for the workers
 pthread_cond_t worker_cv, main_cv;  // cv for the workers
-pthread_attr_t attr;                // attribute 
+pthread_attr_t attr;                // attribute
 pthread_t *threads;                 // threads array
 long *thread_ids;                   // id's array
 float *wait_sec, program_sec;	    // times
@@ -34,12 +35,12 @@ int main()
 	int i, rc, j;
 	signal(SIGINT, quit_signal_handler); // control-c signal
 
-	
+
 	start_program = clock();
 	pthread_t aux_thread;
 	pthread_t task_gen;
 
-	threads = (pthread_t *)malloc(total_threads*sizeof(pthread_t));	
+	threads = (pthread_t *)malloc(total_threads*sizeof(pthread_t));
 	thread_ids = (long *)malloc(total_threads*sizeof(long));
 	thread_queue = (queue *)malloc(total_threads*sizeof(queue));
 	wait_sec = (float *)malloc(total_threads*sizeof(float));
@@ -53,13 +54,13 @@ int main()
 	pthread_cond_init(&worker_cv, NULL);
 	pthread_attr_init(&attr);
 	pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE);
-	
+
 	// Creating the first worker
-	pthread_create(&threads[total_threads-1], &attr, 
+	pthread_create(&threads[total_threads-1], &attr,
 		worker_basic_function, (void *)thread_ids[total_threads-1]);
 
 	// Creating the auxiliary thread
-	pthread_create(&aux_thread, &attr, 
+	pthread_create(&aux_thread, &attr,
 		aux_function, NULL);
 
 	pthread_create(&task_gen, &attr, task_generator_handler, NULL);
@@ -98,13 +99,13 @@ void *worker_basic_function(void *t)
 	long id = (long)t;
 	clock_t start, end;
 	int i, N, j;
-	
+
 	while(TRUE) {
 		//j++;
 		//task_generator_handler();
 		pthread_mutex_lock(&worker_mutex);
 
-		if((thread_queue[id-1].shutdown == TRUE) || 
+		if((thread_queue[id-1].shutdown == TRUE) ||
 				((task_count == NUM_TASKS) && (thread_queue[id-1].tail == EMPTY_QUEUE))) {
 			pthread_mutex_unlock(&worker_mutex);
 			thread_counter--;
@@ -129,7 +130,7 @@ void *worker_basic_function(void *t)
 			end = clock();
 			//waiting time
 			wait_sec[id-1] = wait_sec[id-1] + (float)(abs(end - start)) / CLOCKS_PER_SEC;
-			
+
 			switch (type) {
 				int y,z;
 				case (TYPE_1):
@@ -153,7 +154,7 @@ void *worker_basic_function(void *t)
 			pthread_mutex_unlock(&worker_mutex);
 
 		}
-		//excecuted_tasks++;		
+		//excecuted_tasks++;
 	}
 }
 
@@ -177,7 +178,7 @@ void *aux_function()
 			printf("Idle time: %lf /100\n", idle_time);
 			printf("Mean waiting time: %lf\n", mean_wait);
 		}
-		
+
 		sum = 0;
 		for (i=0; i<total_threads; i++) {
 			if (thread_queue[i].shutdown == FALSE) {
@@ -207,7 +208,7 @@ void *aux_function()
 		}
 		pthread_mutex_unlock(&worker_mutex);
 		usleep(Tp);
-		
+
 	}
 }
 
@@ -236,23 +237,23 @@ void init_thread_queues()
 void *task_generator_handler()
 {
 	//long id = (long)t;
-	
+
 	long random_thread;
 	int random_task, i, flag;
 
 	while (task_count <= NUM_TASKS) {
 		usleep(Tc);
 		pthread_mutex_lock(&worker_mutex);
-		
+
 		// Generating new task
 		random_task = (rand() % TYPES) + OFFSET;
 		random_thread = (long)((rand() % total_threads));
-		
+
 		generated_tasks++;
 
 		if (thread_queue[random_thread].tail < WORK_LOAD_THRESHOLD) {
 			//printf("FUCK YEAAAAH\n");
-			thread_queue[random_thread] = 
+			thread_queue[random_thread] =
 					enqueue(thread_queue[random_thread], random_task);
 			//printf("\nMain thread\n");
 			pthread_cond_signal(&worker_cv);
@@ -281,18 +282,18 @@ void create_new_thread()
 	total_threads++;
 	thread_counter++;
 	threads = realloc(threads, total_threads*sizeof(pthread_t));
-	
+
 	thread_ids = realloc(thread_ids, total_threads*sizeof(long));
 	//printf("Realloc2\n");
 	thread_ids[total_threads-1] = total_threads;
 
 	thread_queue = realloc(thread_queue, total_threads*sizeof(queue));
-	thread_queue[total_threads-1] = 
+	thread_queue[total_threads-1] =
 			init_queue(thread_queue[total_threads-1], total_threads);
 
 	wait_sec = realloc(wait_sec, total_threads*sizeof(float));
 
-	pthread_create(&threads[total_threads-1], &attr, 
+	pthread_create(&threads[total_threads-1], &attr,
 			worker_basic_function, (void *)thread_ids[total_threads-1]);
 }
 
@@ -328,4 +329,3 @@ void quit_signal_handler(int signum)
 	}
 	return;
 }
-
